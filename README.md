@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+---
+Codex Bohemiae
 
-## Getting Started
+Next.js (https://img.shields.io/badge/Next.js_15-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+TypeScript (https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+Groq (https://img.shields.io/badge/Groq-F55036?style=flat-square&logoColor=white)
+Pinecone (https://img.shields.io/badge/Pinecone-00B388?style=flat-square&logoColor=white)
+Vercel (https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 
-First, run the development server:
+▎ A scholarly guide to medieval Bohemia, c. 1403
 
-```bash
+A RAG chatbot that answers questions about the world of Kingdom Come: Deliverance 2 — grounded in real history. Ask about Jan Žižka, the Hussite Wars, Wenceslaus IV, or Wagenburg tactics and receive a response in the voice of an illuminated manuscript, sourced from Wikipedia and cited like a medieval chronicle.
+
+---
+Features
+
+- Illuminated manuscript UI — parchment palette, SVG knotwork borders, historiated drop-cap initials, Cinzel + IM Fell English typography
+- Real-time streaming — responses stream token by token via Groq's SSE API
+- RAG pipeline — user query → Pinecone vector search → retrieved context → Groq generation
+- Integrated embeddings — Pinecone handles embedding automatically via llama-text-embed-v2; no separate embeddings service needed
+- Manuscript citations — every response ends with a † footnote citing the source
+
+Tech Stack
+
+┌─────────────────┬──────────────────────────────────────────┐
+│      Layer      │                  Choice                  │
+├─────────────────┼──────────────────────────────────────────┤
+│ Framework       │ Next.js 15 App Router                    │
+├─────────────────┼──────────────────────────────────────────┤
+│ Language        │ TypeScript                               │
+├─────────────────┼──────────────────────────────────────────┤
+│ LLM             │ Groq — llama-3.3-70b-versatile           │
+├─────────────────┼──────────────────────────────────────────┤
+│ Vector DB       │ Pinecone (integrated inference)          │
+├─────────────────┼──────────────────────────────────────────┤
+│ Embedding model │ llama-text-embed-v2 (hosted by Pinecone) │
+├─────────────────┼──────────────────────────────────────────┤
+│ Text splitting  │ LangChain RecursiveCharacterTextSplitter │
+├─────────────────┼──────────────────────────────────────────┤
+│ Data source     │ Wikipedia                                │
+├─────────────────┼──────────────────────────────────────────┤
+│ Fonts           │ Cinzel + IM Fell English (Google Fonts)  │
+├─────────────────┼──────────────────────────────────────────┤
+│ Deployment      │ Vercel                                   │
+└─────────────────┴──────────────────────────────────────────┘
+
+How It Works
+
+User question
+     │
+     ▼
+Pinecone searchRecords()          ← query embedded by llama-text-embed-v2
+     │
+     ▼
+Top-4 chunks injected into prompt
+     │
+     ▼
+Groq streams response             ← llama-3.3-70b-versatile
+     │
+     ▼
+Client parses RUBRIC / body / † citation from stream
+     │
+     ▼
+Rendered as illuminated manuscript entry
+
+Getting Started
+
+1. Clone & install
+
+git clone https://github.com/your-username/codex-bohemiae
+cd codex-bohemiae
+npm install --legacy-peer-deps
+
+2. Environment variables
+
+Create a .env.local file:
+
+env
+GROQ_API_KEY=
+PINECONE_API_KEY=
+PINECONE_INDEX=codex-bohemiae
+PINECONE_CLOUD=aws
+PINECONE_REGION=us-east-1
+
+3. Ingest the knowledge base
+
+Start the dev server, then run the one-time ingestion:
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+curl -X POST http://localhost:3000/api/ingest
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The Pinecone index is created automatically if it doesn't exist. Ingestion takes ~10 seconds.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. Consult the Codex
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open http://localhost:3000 and ask your question.
 
-## Learn More
+Knowledge Base
 
-To learn more about Next.js, take a look at the following resources:
+The following Wikipedia articles are ingested by default:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Hussite Wars
+- Jan Žižka
+- Wenceslaus IV of Bohemia
+- Sigismund, Holy Roman Emperor
+- Battle of Vítkov Hill
+- Wagenburg
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Deploy to Vercel
 
-## Deploy on Vercel
+Deploy with Vercel (https://vercel.com/button) (https://vercel.com/new)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Add the five environment variables in your Vercel project settings, deploy, then hit /api/ingest once via curl or Postman to populate the index.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
