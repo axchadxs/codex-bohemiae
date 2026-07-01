@@ -6,6 +6,7 @@
 ![Groq](https://img.shields.io/badge/Groq-F55036?style=flat-square&logoColor=white)
 ![Pinecone](https://img.shields.io/badge/Pinecone-00B388?style=flat-square&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
+![App Screenshot](screenshot.png)
 
 > *A scholarly guide to medieval Bohemia, c. 1403*
 
