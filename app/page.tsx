@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
 import KnotworkBorder from "@/components/KnotworkBorder";
 import ChatMessage from "@/components/ChatMessage";
+import { parseReply, parseSseEvents, splitRubric } from "@/lib/parse";
 
 type UserMessage = { role: "user"; content: string };
 type AssistantMessage = { role: "assistant"; rubric: string; body: string; citation: string };
@@ -35,8 +36,6 @@ export default function Home() {
     setStreamingMsg({ rubric: "", body: "" });
 
     let rawBuffer = "";
-    let rubricExtracted = false;
-    let rubricEndIdx = 0;
 
     try {
       const res = await fetch("/api/chat", {
@@ -58,60 +57,24 @@ export default function Home() {
 
         sseBuffer += decoder.decode(value, { stream: true });
 
-        const parts = sseBuffer.split("\n\n");
-        sseBuffer = parts.pop() ?? "";
+        const { events, rest } = parseSseEvents(sseBuffer);
+        sseBuffer = rest;
 
-        for (const part of parts) {
-          if (!part.startsWith("data: ")) continue;
-          const payload: { text?: string; done?: boolean; error?: string } = JSON.parse(
-            part.slice(6)
-          );
-
+        for (const payload of events) {
           if (payload.error) throw new Error(payload.error);
           if (payload.done) break outer;
 
           if (payload.text) {
             rawBuffer += payload.text;
 
-            if (!rubricExtracted) {
-              const nl = rawBuffer.indexOf("\n");
-              if (nl !== -1) {
-                const firstLine = rawBuffer.slice(0, nl);
-                rubricExtracted = true;
-                rubricEndIdx = nl + 1;
-                const rubric = firstLine.startsWith("RUBRIC:")
-                  ? firstLine.slice(7).trim()
-                  : firstLine.trim();
-                setStreamingMsg({
-                  rubric,
-                  body: rawBuffer.slice(rubricEndIdx).trimStart(),
-                });
-              }
-              // Don't update UI yet — waiting for rubric line to complete
-            } else {
-              setStreamingMsg((prev) =>
-                prev ? { ...prev, body: rawBuffer.slice(rubricEndIdx).trimStart() } : null
-              );
-            }
+            // Don't update the UI until the rubric line is complete.
+            const split = splitRubric(rawBuffer);
+            if (split) setStreamingMsg(split);
           }
         }
       }
 
-      // Finalize: extract citation from last line
-      const rubricLineRaw = rawBuffer.slice(0, rubricEndIdx).trim();
-      const rubric = rubricLineRaw.startsWith("RUBRIC:")
-        ? rubricLineRaw.slice(7).trim()
-        : rubricLineRaw;
-
-      let body = rawBuffer.slice(rubricEndIdx).trimStart();
-      let citation = "";
-
-      const lines = body.trimEnd().split("\n");
-      const lastLine = lines[lines.length - 1].trim();
-      if (lastLine.startsWith("†")) {
-        citation = lastLine.slice(1).trim();
-        body = lines.slice(0, -1).join("\n").trimEnd();
-      }
+      const { rubric, body, citation } = parseReply(rawBuffer);
 
       setMessages((prev) => [...prev, { role: "assistant", rubric, body, citation }]);
     } catch (err) {
