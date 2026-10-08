@@ -1,4 +1,3 @@
----
 # Codex Bohemiae
 
 ![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=flat-square&logo=nextdotjs&logoColor=white)
@@ -12,7 +11,7 @@
 
 A RAG chatbot that answers questions about the world of **Kingdom Come: Deliverance 2** — grounded in real history. Ask about Jan Žižka, the Hussite Wars, Wenceslaus IV, or Wagenburg tactics and receive a response in the voice of an illuminated manuscript, sourced from Wikipedia and cited like a medieval chronicle.
 
----
+
 
 ## Features
 
