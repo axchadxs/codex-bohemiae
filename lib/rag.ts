@@ -13,6 +13,16 @@ RUBRIC: [A short Latin-style heading for this topic, 5–8 words, e.g. "De Bello
 
 Do not add any text before RUBRIC: or after the † citation line.`;
 
+/** Format retrieved Pinecone hits into the numbered context block sent to the LLM. */
+export function buildContext(hits: { fields: unknown }[]): string {
+  return hits
+    .map((hit, i) => {
+      const f = hit.fields as Record<string, string>;
+      return `[Source ${i + 1} — ${f.source ?? "Bohemian history"}]\n${f.text ?? ""}`;
+    })
+    .join("\n\n---\n\n");
+}
+
 export async function streamRagResponse(question: string): Promise<ReadableStream<Uint8Array>> {
   const pinecone = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
   const index = pinecone.index({ name: process.env.PINECONE_INDEX! });
@@ -25,12 +35,7 @@ export async function streamRagResponse(question: string): Promise<ReadableStrea
     fields: ["text", "source"],
   });
 
-  const context = searchResponse.result.hits
-    .map((hit, i) => {
-      const f = hit.fields as Record<string, string>;
-      return `[Source ${i + 1} — ${f.source ?? "Bohemian history"}]\n${f.text ?? ""}`;
-    })
-    .join("\n\n---\n\n");
+  const context = buildContext(searchResponse.result.hits);
 
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const groqStream = await groq.chat.completions.create({
