@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+coverage
+.git
+.github
+.env*
+*.md
+screenshot.png
+Dockerfile
+docker-compose.yml
+.dockerignore
+npm-debug.log*
+.DS_Store
