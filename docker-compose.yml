@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    # Reads GROQ_API_KEY, PINECONE_API_KEY, PINECONE_INDEX, etc. from .env.local
+    env_file:
+      - .env.local
+    restart: unless-stopped
